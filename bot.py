@@ -1,4 +1,5 @@
 import discord
+from discord import File
 import discord.utils
 from discord.utils import get
 import requests
@@ -6,6 +7,10 @@ import sys
 from discord.ext import commands
 import asyncio
 import os
+import re
+from io import BytesIO
+import xlsxwriter
+from datetime import datetime
 TOKEN = 'DISCORD_BOT_TOKEN'
 bot = commands.Bot(command_prefix='!')
 @bot.command(pass_context=True)
@@ -16,7 +21,8 @@ async def on_connect():
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Activity())
+    print("Ready!")
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="rindi.com/svit"))
     
 @bot.event
 async def on_member_join(member):
@@ -31,8 +37,9 @@ async def on_member_join(member):
 async def on_raw_reaction_add(payload):
     if(payload.message_id == 758740542044504084):
         guild = bot.get_guild(payload.guild_id)
-        member = guild.get_member(payload.user_id)
+        member = guild.get_member(payload.user_id) 
         emoji = payload.emoji
+        print(payload.user_id)
         
         if(emoji.name == '1️⃣'):
             role = discord.utils.get(guild.roles, name="År 1")
@@ -68,8 +75,8 @@ async def on_raw_reaction_remove(payload):
     
 async def analyzeNSFW(msg):
     try:
-        api_key = 'GET_YOUR_OWN_API_KEY'
-        api_secret = 'GET_YOUR_OWN_SECRET_KEY'
+        api_key = 'imagga_API_KEY'
+        api_secret = 'imagga_API_SECRET'
 
         response = requests.get(
             'https://api.imagga.com/v2/categories/nsfw_beta?image_url=' + msg.attachments[0].url,
@@ -92,24 +99,52 @@ async def analyzeNSFW(msg):
 @bot.event
 async def on_message(msg):
     if(len(msg.attachments) > 0):
+        print(msg.attachments[0].filename)
+        print("--")
         print("Starting NSFW check")
         loopNSFW = asyncio.get_event_loop()
         loopNSFW.create_task(analyzeNSFW(msg))
+
+    if ('!file' in msg.content.lower() and ("svit elit" in [y.name.lower() for y in msg.author.roles])):
+        files = []
+        for file in msg.attachments:
+            fp = BytesIO()
+            await file.save(fp)
+            files.append(discord.File(fp, filename=file.filename, spoiler=file.is_spoiler()))
+        await msg.channel.send(files=files)
+        await msg.delete()
     
     if ('!say' in msg.content.lower() and ("svit elit" in [y.name.lower() for y in msg.author.roles])):
-        await msg.channel.send(msg.content.replace("!say ",""))
+        await msg.channel.send(replace("!say","",msg.content,False))
+        if(len(msg.attachments) > 0):
+            files = []
+            for file in msg.attachments:
+                fp = BytesIO()
+                await file.save(fp)
+                files.append(discord.File(fp, filename=file.filename, spoiler=file.is_spoiler()))
+            await msg.channel.send(files=files)
         await msg.delete()
         
     if ('!edit' in msg.content.lower() and ("svit elit" in [y.name.lower() for y in msg.author.roles])):
         channel = msg.channel
         message = await channel.fetch_message(msg.content.lower().split(" ")[1])
-        await message.edit(content=msg.content.replace("!edit ","").replace(msg.content.lower().split(" ")[1], ""))
+        await message.edit(content=replace("!edit ","", msg.content, False).replace(msg.content.lower().split(" ")[1], ""))
         await msg.delete()
         
     if ('!remove' in msg.content.lower() and ("svit elit" in [y.name.lower() for y in msg.author.roles])):
         channel = msg.channel
         message = await channel.fetch_message(msg.content.lower().split(" ")[1])
         await message.delete()
-        await msg.delete()    
+        await msg.delete()
+
+    if ('!emergency' in msg.content.lower() and ("svit elit" in [y.name.lower() for y in msg.author.roles])):
+        await bot.close()
+
+def replace(old, new, str, caseinsentive = False):
+    if caseinsentive:
+        return str.replace(old, new)
+    else:
+        return re.sub(re.escape(old), new, str, flags=re.IGNORECASE)
+    
 
 bot.run(TOKEN)
