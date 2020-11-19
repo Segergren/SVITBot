@@ -11,8 +11,13 @@ import re
 from io import BytesIO
 import xlsxwriter
 from datetime import datetime
-TOKEN = 'DISCORD_BOT_TOKEN'
-bot = commands.Bot(command_prefix='!')
+intents = discord.Intents.default()
+intents.members = True
+credentials = open('credentials.txt').read().splitlines()
+
+TOKEN = credentials[0]
+
+bot = commands.Bot(command_prefix='!',intents=intents)
 @bot.command(pass_context=True)
 
 @bot.event
@@ -36,23 +41,24 @@ async def on_member_join(member):
 @bot.event
 async def on_raw_reaction_add(payload):
     if(payload.message_id == 758740542044504084):
-        guild = bot.get_guild(payload.guild_id)
-        member = guild.get_member(payload.user_id) 
+        channel = await bot.fetch_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
         emoji = payload.emoji
-        print(payload.user_id)
+        guild = bot.get_guild(payload.guild_id)
+        member = guild.get_member(payload.user_id)
         
-        if(emoji.name == '1️⃣'):
+        if(str(emoji) == '1️⃣'):
             role = discord.utils.get(guild.roles, name="År 1")
             await member.add_roles(role, reason="År 1")
             print("Added " + member.name + " to år 1")
-        if(emoji.name == '2️⃣'):
+        if(str(emoji) == '2️⃣'):
             role = discord.utils.get(guild.roles, name="År 2")
             await member.add_roles(role, reason="År 2")
             print("Added " + member.name + " to år 2")
-        if(emoji.name == '3️⃣'):
+        if(str(emoji) == '3️⃣'):
             role = discord.utils.get(guild.roles, name="År 3")
-            await member.add_roles(role, reason="År 2")
-            print("Added " + member.name + " to år 2")
+            await member.add_roles(role, reason="År 3")
+            print("Added " + member.name + " to år 3")
 @bot.event
 async def on_raw_reaction_remove(payload):
     if(payload.message_id == 758740542044504084):
@@ -70,13 +76,13 @@ async def on_raw_reaction_remove(payload):
             print("Removed " + member.name + " from år 2")
         if(emoji.name == '3️⃣'):
             role = discord.utils.get(guild.roles, name="År 3")
-            await member.remove_roles(role, reason="År 2")
-            print("Removed " + member.name + " from år 2")
+            await member.remove_roles(role, reason="År 3")
+            print("Removed " + member.name + " from år 3")
     
 async def analyzeNSFW(msg):
     try:
-        api_key = 'imagga_API_KEY'
-        api_secret = 'imagga_API_SECRET'
+        api_key = credentials[1]
+        api_secret = credentials[2]
 
         response = requests.get(
             'https://api.imagga.com/v2/categories/nsfw_beta?image_url=' + msg.attachments[0].url,
@@ -146,5 +152,4 @@ def replace(old, new, str, caseinsentive = False):
     else:
         return re.sub(re.escape(old), new, str, flags=re.IGNORECASE)
     
-
 bot.run(TOKEN)
