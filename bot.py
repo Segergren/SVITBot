@@ -9,13 +9,12 @@ import asyncio
 import os
 import re
 from io import BytesIO
-import xlsxwriter
-from datetime import datetime
 intents = discord.Intents.default()
 intents.members = True
 credentials = open('credentials.txt').read().splitlines()
 
 TOKEN = credentials[0]
+STATUS = "rindi.com/svit"
 
 bot = commands.Bot(command_prefix='!',intents=intents)
 @bot.command(pass_context=True)
@@ -27,7 +26,7 @@ async def on_connect():
 @bot.event
 async def on_ready():
     print("Ready!")
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="rindi.com/svit"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=STATUS))
     
 @bot.event
 async def on_member_join(member):
@@ -35,14 +34,14 @@ async def on_member_join(member):
     welcomeMessage = await channel.send("Hej och välkommen " + member.name.replace("@","") + "!")
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Hej "  + member.name.replace("@","") + "!"))
     await asyncio.sleep(30)
-    await bot.change_presence(activity=discord.Activity())
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=STATUS))
     await welcomeMessage.delete()
     
 @bot.event
 async def on_raw_reaction_add(payload):
     if(payload.message_id == 758740542044504084):
         channel = await bot.fetch_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+        await channel.fetch_message(payload.message_id)
         emoji = payload.emoji
         guild = bot.get_guild(payload.guild_id)
         member = guild.get_member(payload.user_id)
@@ -153,3 +152,5 @@ def replace(old, new, str, caseinsentive = False):
         return re.sub(re.escape(old), new, str, flags=re.IGNORECASE)
     
 bot.run(TOKEN)
+
+
