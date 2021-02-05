@@ -58,6 +58,51 @@ async def on_raw_reaction_add(payload):
             role = discord.utils.get(guild.roles, name="År 3")
             await member.add_roles(role, reason="År 3")
             print("Added " + member.name + " to år 3")
+    guild = bot.get_guild(payload.guild_id)
+    member = guild.get_member(payload.user_id)
+
+    if(str(member) != "SVIT#9050" and str(payload.emoji) == "<:votedone:801238564238000179>"):
+        channel = await bot.fetch_channel(payload.channel_id)
+        reactionMessage = await channel.fetch_message(payload.message_id)
+        if("RÖSTNING" in reactionMessage.content and (channel.id == 801237039345172511 or channel.id == 760184150509879376)):
+            yesReaction = reactionMessage.reactions[0].count
+            noReaction = reactionMessage.reactions[1].count
+            
+            yesusers = await reactionMessage.reactions[0].users().flatten()
+            nousers = await reactionMessage.reactions[1].users().flatten()
+            votes = "__Röster__\n"
+            for user in yesusers:
+                if(user.display_name != "SVIT"):
+                    votes = votes + "<:yes:801237811595575386> " + user.display_name + "\n"
+            for user in nousers:
+                if(user.display_name != "SVIT"):
+                    votes = votes + "<:no:801237793073922069> " +user.display_name + "\n"
+            votes = votes + "\n**RESULTAT**\n"
+            
+            if(yesReaction > noReaction):
+                await reactionMessage.edit(content=reactionMessage.content.replace("<:inprogress:801223023939289099> *Denna omröstning är öppen!*", votes + "<:yes:801237811595575386> Förslaget fick ett **Ja** i omröstningen"))
+            if(noReaction > yesReaction):
+                await reactionMessage.edit(content=reactionMessage.content.replace("<:inprogress:801223023939289099> *Denna omröstning är öppen!*", votes + "<:no:801237793073922069> Förslaget fick ett **Nej** i omröstningen"))
+            if(yesReaction == noReaction):
+                chairmanVoteYes = None
+                usersVotedNo = await reactionMessage.reactions[1].users().flatten()
+                for user in usersVotedNo:
+                    if(int(user.id) == 623491039726141451):
+                        chairmanVoteYes = False
+                if(chairmanVoteYes == None):
+                    usersVotedYes = await reactionMessage.reactions[0].users().flatten()
+                    if(int(user.id) == 623491039726141451):
+                        chairmanVoteYes = True
+                if(chairmanVoteYes == True):
+                    await reactionMessage.edit(content=reactionMessage.content.replace("<:inprogress:801223023939289099> *Denna omröstning är öppen!*", votes + "<:yes:801237811595575386> Förslaget fick ett **Ja** i omröstningen"))
+                    pass
+                elif(chairmanVoteYes == False):
+                    await reactionMessage.edit(content=reactionMessage.content.replace("<:inprogress:801223023939289099> *Denna omröstning är öppen!*", votes + "<:no:801237793073922069> Förslaget fick ett **Nej** i omröstningen"))
+                    pass
+                else:
+                    await reactionMessage.edit(content=reactionMessage.content.replace("<:inprogress:801223023939289099> *Denna omröstning är öppen!*", "<:cancel:801237919469142016> Omröstningen kunde inte avslutas då det blev lika."))
+                    pass
+                   
 @bot.event
 async def on_raw_reaction_remove(payload):
     if(payload.message_id == 758740542044504084):
@@ -118,6 +163,15 @@ async def on_message(msg):
             files.append(discord.File(fp, filename=file.filename, spoiler=file.is_spoiler()))
         await msg.channel.send(files=files)
         await msg.delete()
+        
+    if ('!vote' in msg.content.lower() and ("svit elit" in [y.name.lower() for y in msg.author.roles])):
+        messageFormatted = replace("!vote ","",msg.content,False)
+        await msg.delete()
+        stringBuilder = "━━━━━━━━━━━━━━━\n**RÖSTNING**\n" + messageFormatted + "\n\n<:inprogress:801223023939289099> *Denna omröstning är öppen!*\n━━━━━━━━━━━━━━━"
+        sentMessage = await msg.channel.send(stringBuilder)
+        await sentMessage.add_reaction(bot.get_emoji(801237811595575386))
+        await sentMessage.add_reaction(bot.get_emoji(801237793073922069))
+        await sentMessage.add_reaction(bot.get_emoji(801238564238000179))
     
     if ('!say' in msg.content.lower() and ("svit elit" in [y.name.lower() for y in msg.author.roles])):
         await msg.channel.send(replace("!say","",msg.content,False))
@@ -152,5 +206,3 @@ def replace(old, new, str, caseinsentive = False):
         return re.sub(re.escape(old), new, str, flags=re.IGNORECASE)
     
 bot.run(TOKEN)
-
-
