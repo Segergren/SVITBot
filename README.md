@@ -1,6 +1,6 @@
 # SVITBot
 This is the SVIT-bot for the SVIT Discord server.<br>
-![Image of the bot](https://o11.se/botten_nya.PNG)
+![Image of the bot](https://segergren.dev/projects/Discord_bot/botten_nya.PNG)
 ### Functions
 * !vote _meddelande_ | __!vote Möte måndag kl. 16:00__<br>
   ![Image of the bot](https://i.imgur.com/NLDSaAb.png)
